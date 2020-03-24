@@ -20,7 +20,7 @@
 #define _SD_WAVE_FILE_INCLUDED
 
 #include <Arduino.h>
-#include <SD.h>
+#include <SdFat.h>
 
 #include "SoundFile.h"
 
@@ -28,8 +28,7 @@ class SDWaveFile : public SoundFile
 {
 public:
   SDWaveFile();
-  SDWaveFile(const char *filename);
-  SDWaveFile(const String& filename);
+  SDWaveFile(File file);
 
   virtual ~SDWaveFile();
 
@@ -42,6 +41,7 @@ public:
 
   // from SoundFile
   virtual long frames();
+  virtual long blockAlign();
   virtual long duration();
   virtual long currentTime();
 
@@ -62,7 +62,6 @@ private:
   bool _isPlaying;
 
   File _file;
-  String _filename;
 
   long _sampleRate;
   int _bitsPerSample;

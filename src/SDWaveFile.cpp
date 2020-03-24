@@ -40,16 +40,19 @@ struct WaveFileHeader {
   struct SubChunkHeader subChunk2Header;
 } __attribute__((packed));
 
+// The zero-value of a file, used for the empty constructor
+File zeroFile;
+
 SDWaveFile::SDWaveFile() : 
-  SDWaveFile(NULL)
+  SDWaveFile(zeroFile)
 {
 }
 
-SDWaveFile::SDWaveFile(const char* filename) :
+SDWaveFile::SDWaveFile(File file) :
   _headerRead(false),
   _isValid(false),
   _isPlaying(false),
-  _filename(filename),
+  _file(file),
 
   _sampleRate(-1),
   _bitsPerSample(-1),
@@ -60,66 +63,48 @@ SDWaveFile::SDWaveFile(const char* filename) :
 
 }
 
-SDWaveFile::SDWaveFile(const String& filename) :
-  SDWaveFile(filename.c_str())
-{
-
-}
-
 SDWaveFile::~SDWaveFile() {
 }
 
 SDWaveFile::operator bool()
 {
-  if (!_headerRead) {
-    readHeader();
-  }
-
-  return _filename && _isValid;
+  readHeader();
+  return _isValid;
 }
 
 long SDWaveFile::sampleRate()
 {
-  if (!_headerRead) {
-    readHeader();
-  }
-
+  readHeader();
   return _sampleRate;
 }
 
 int SDWaveFile::bitsPerSample()
 {
-  if (!_headerRead) {
-    readHeader();
-  }
-
+  readHeader();
   return _bitsPerSample;
 }
 
 int SDWaveFile::channels()
 {
-  if (!_headerRead) {
-    readHeader();
-  }
-
+  readHeader();
   return _channels;
 }
 
 long SDWaveFile::frames()
 {
-  if (!_headerRead) {
-    readHeader();
-  }
-
+  readHeader();
   return _frames;
+}
+
+long SDWaveFile::blockAlign()
+{
+  readHeader();
+  return _blockAlign;
 }
 
 long SDWaveFile::duration()
 {
-  if (!_headerRead) {
-    readHeader();
-  }
-
+  readHeader();
   return (_frames / _sampleRate);
 }
 
@@ -168,8 +153,6 @@ int SDWaveFile::begin()
     return 0;
   }
 
-  _file = SD.open(_filename);
-
   _isPlaying = true;
 
   return 1;
@@ -208,13 +191,11 @@ void SDWaveFile::end()
 
 void SDWaveFile::readHeader()
 {
-  _isValid = false;
-
   if (_headerRead) {
     return;
   }
 
-  _file = SD.open(_filename);
+  _isValid = false;
 
   if (!_file) {
     return;
